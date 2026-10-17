@@ -107,10 +107,13 @@ scripts/run-server.sh                      # foreground, same thing the panel sp
 loader path, it exports `LD_LIBRARY_PATH` to the directory holding `llama-server` — without that,
 `llama-server` starts and immediately dies when launched from anywhere else.
 
-## The caveman + ponytail style block
+## The injected style + environment block
 
-`style/caveman-ponytail.jinja` is a chat template: the model's own template with an extra system
-block injected before the tools section. `run-server.sh` passes it with `--chat-template-file`, so
+`style/caveman-ponytail.jinja` is a chat template: the model's own template with two extra system
+blocks injected before the tools section — caveman/ponytail *style*, then *who it is and which
+machine it runs on* (CachyOS, Hyprland, caelestia, and an explicit "the shell is caelestia, the
+`noctalia-qs` package is only the quickshell runtime, never call it noctalia" rule). That second
+block is what stops the model from answering about the wrong shell. `run-server.sh` passes it with `--chat-template-file`, so
 the style applies at the server, for every client, and cannot be overridden by a client's system
 prompt (it is part of the template-rendered system message).
 
@@ -125,7 +128,9 @@ Two rules to keep when editing it:
 
 - Jinja comments must end with `-#}`, not `-*-}`; the latter leaves `render_content` undefined and
   every request 500s.
-- Keep the style block above the tools section, otherwise tool calls get the chatty style too.
+- Keep both blocks above the tools section, otherwise tool calls get the chatty style too.
+- The environment facts are static on purpose. Anything that drifts (kernel, versions) is left out so
+  the model has to run a command instead of quoting a stale string.
 
 ## Layout
 
