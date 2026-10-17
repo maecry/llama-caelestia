@@ -20,14 +20,16 @@ bar (bottom left)         popout
 
 ## What it does
 
-- **Robot button** stacked above the power button in the bar. Hover it → chat popout opens.
+- **Robot button** stacked above the power button in the bar. Hover it → chat popout opens
+  (transient, closes when you leave); click it → the panel is pinned and stays put.
 - **Play / stop** in the popout header starts and stops `llama-server` (`llama-ctl toggle`).
 - **Chat** runs `pi --mode rpc` inside the shell, so it has pi's tools, sessions and file access —
   an OS helper, not just a prompt box. The process lives in the shell singleton, so closing the
   panel keeps the session running in the background.
 - **Toast when an answer lands** while the panel is closed.
-- **Popout stays open** while you move to its buttons (it is not a hover menu). Close it with the
-  robot icon, the `×`, or `Escape`; the chat keeps going and a toast tells you when the answer is in.
+- **Header** shows live `tok/s` while the model answers, `ready` when idle, `server stopped` when the
+  server is down. Pin toggle (`keep`) keeps the panel open while you work elsewhere; `×`, `Escape` or
+  unpinning closes it. The chat keeps going either way, with a toast when a closed panel's answer lands.
 - Styling uses real caelestia Material 3 tokens (`Colours`, `Tokens`, `Anim`, `MaterialIcon`).
 
 ## How it hooks into the shell
@@ -81,6 +83,17 @@ qs -c caelestia kill; sleep .1; caelestia shell -d
 
 If your model id differs, change `model` in `shell-overlay/modules/chat/ChatState.qml` (the panel
 passes it straight to `pi --model`).
+
+## Slash commands
+
+Typed in the composer, handled inside the panel (never sent to the model):
+
+| command | what |
+|---|---|
+| `/new` | start a fresh session |
+| `/resume` | list the 8 most recent sessions for `$HOME` |
+| `/resume <n>` | switch to entry `n` of that list, replay its messages |
+| `/help` | reminder of the above |
 
 ## Server control
 

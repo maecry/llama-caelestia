@@ -84,14 +84,24 @@ patch("modules/drawers/ContentWindow.qml", [
      "WlrLayershell.keyboardFocus: screenState.launcher || screenState.session || (panels.popouts.hasCurrent && panels.popouts.currentName === \"chat\") ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None"),
 ])
 
-# 4. keep the chat open when the pointer leaves the bar, otherwise you cannot reach
-#    the panel's own buttons. It closes on the robot click, the X button or Escape.
+# 4. a pinned chat stays open when the pointer leaves; an unpinned one closes like any hover menu
 patch("modules/drawers/Interactions.qml", [
+    ("import qs.modules.bar.popouts as BarPopouts\n",
+     "import qs.modules.bar.popouts as BarPopouts\nimport qs.modules.chat as Chat\n"),
+    ("""    property bool utilitiesShortcutActive
+""",
+     """    property bool utilitiesShortcutActive
+
+    // A pinned chat ignores pointer-leave closing; an unpinned one closes like a hover menu.
+    function keepChat(): bool {
+        return popouts.currentName === "chat" && Chat.ChatState.pinned;
+    }
+"""),
     ("""            if (!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1) {
                 popouts.hasCurrent = false;
                 bar.closeTray();
             }""",
-     """            if (popouts.currentName !== "chat" && (!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1)) {
+     """            if (!keepChat() && (!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1)) {
                 popouts.hasCurrent = false;
                 bar.closeTray();
             }"""),
@@ -99,7 +109,7 @@ patch("modules/drawers/Interactions.qml", [
             popouts.hasCurrent = false;
             bar.closeTray();
         }""",
-     """        } else if (popouts.currentName !== "chat" && (!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1) && !inLeftPanel(panels.popoutsWrapper, x, y)) {
+     """        } else if (!keepChat() && (!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1) && !inLeftPanel(panels.popoutsWrapper, x, y)) {
             popouts.hasCurrent = false;
             bar.closeTray();
         }"""),

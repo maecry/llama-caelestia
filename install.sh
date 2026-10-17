@@ -9,6 +9,7 @@ command -v caelestia >/dev/null || { echo "error: caelestia shell not found" >&2
 
 mkdir -p "${HOME}/.local/bin"
 ln -sf "$HERE/scripts/llama-ctl.sh" "${HOME}/.local/bin/llama-ctl"
+ln -sf "$HERE/scripts/pi-sessions.sh" "${HOME}/.local/bin/pi-sessions"
 
 "$HERE/sync.sh"
 

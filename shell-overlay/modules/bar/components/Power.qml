@@ -21,10 +21,12 @@ Item {
     // Start the chat backend with the bar so the first hover is instant.
     Component.onCompleted: Chat.ChatState.refreshServer()
 
+    // Click pins the panel (it survives the pointer leaving); hover only opens it.
     function toggleChat(): void {
         if (chatOpen) {
-            root.popouts.hasCurrent = false;
+            Chat.ChatState.pinned = !Chat.ChatState.pinned;
         } else {
+            Chat.ChatState.pinned = true;
             root.popouts.currentName = "chat";
             root.popouts.currentCenter = robotBtn.mapToItem(null, 0, robotBtn.implicitHeight / 2).y;
             root.popouts.hasCurrent = true;
@@ -57,7 +59,7 @@ Item {
                 text: "smart_toy"
                 color: root.chatOpen ? Colours.palette.m3primary : Colours.palette.m3secondary
                 fontStyle: Tokens.font.icon.builders.small.weight(Font.Bold).build()
-                fill: root.chatOpen ? 1 : 0
+                fill: root.chatOpen && Chat.ChatState.pinned ? 1 : 0
             }
         }
 

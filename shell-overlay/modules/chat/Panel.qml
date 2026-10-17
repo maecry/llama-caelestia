@@ -15,9 +15,14 @@ Item {
 
     readonly property bool active: root.popouts.hasCurrent && root.popouts.currentName === "chat"
 
-    onActiveChanged: ChatState.visible = active
+    onActiveChanged: {
+        ChatState.visible = active;
+        if (!active)
+            ChatState.pinned = false;
+    }
 
     function close(): void {
+        ChatState.pinned = false;
         root.popouts.hasCurrent = false;
     }
 
@@ -54,13 +59,13 @@ Item {
                     spacing: 0
 
                     StyledText {
-                        text: "llama.cpp"
+                        text: "oshelper"
                         font: Tokens.font.title.small
                         color: Colours.palette.m3onSurface
                     }
 
                     StyledText {
-                        text: ChatState.busy ? "working…" : ChatState.serverRunning ? "ready" : "server stopped"
+                        text: ChatState.busy ? (ChatState.tokensPerSecond > 0 ? ChatState.tokensPerSecond.toFixed(1) + " tok/s" : "working…") : ChatState.serverRunning ? "ready" : "server stopped"
                         font: Tokens.font.body.small
                         color: ChatState.busy ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
                     }
@@ -77,6 +82,15 @@ Item {
                     activeColour: ChatState.serverRunning ? Colours.palette.m3error : Colours.palette.m3primary
                     inactiveColour: ChatState.serverRunning ? Colours.palette.m3error : Colours.palette.m3primary
                     onClicked: ChatState.toggleServer()
+                }
+
+                IconButton {
+                    type: IconButton.Text
+                    isRound: true
+                    icon: ChatState.pinned ? "keep" : "keep_off"
+                    activeColour: ChatState.pinned ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
+                    inactiveColour: ChatState.pinned ? Colours.palette.m3primary : Colours.palette.m3onSurfaceVariant
+                    onClicked: ChatState.pinned = !ChatState.pinned
                 }
 
                 IconButton {
@@ -299,7 +313,8 @@ Item {
                     clip: true
 
                     Keys.onReturnPressed: {
-                        ChatState.send(input.text);
+                        if (!ChatState.command(input.text))
+                            ChatState.send(input.text);
                         input.text = "";
                     }
 
@@ -310,7 +325,7 @@ Item {
                     anchors.left: parent.left
                     anchors.leftMargin: Tokens.padding.medium
                     anchors.verticalCenter: parent.verticalCenter
-                    text: "ask local model…"
+                    text: "ask oshelper…"
                     color: Colours.palette.m3onSurfaceVariant
                     font: Tokens.font.body.medium
                     visible: input.text.length === 0
