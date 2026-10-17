@@ -20,6 +20,7 @@ Singleton {
     property bool visible: false
     property bool pinned: false // opened by click: survives the pointer leaving
     property var resumePaths: []
+    property var ask: null // pending extension dialog: {id, method, title, message, options}
     readonly property alias history: logModel
     property bool serverRunning: false
     property real tokensPerSecond: 0
@@ -96,6 +97,31 @@ Singleton {
         }) + "\n");
     }
 
+    // Extensions (e.g. the sudo gate) ask for approval through these dialogs.
+    function respond(value, cancelled): void {
+        if (!ask)
+            return;
+        const r = {
+            type: "extension_ui_response",
+            id: ask.id
+        };
+        if (cancelled)
+            r.cancelled = true;
+        else if (ask.method === "confirm")
+            r.confirmed = value === true || value === "yes";
+        else
+            r.value = value;
+        agent.write(JSON.stringify(r) + "\n");
+        ask = null;
+        busy = true;
+    }
+
+    function abort(): void {
+        if (!busy)
+            return;
+        agent.write('{"type":"abort"}\n');
+    }
+
     function newChat(): void {
         if (busy)
             return;
@@ -111,6 +137,23 @@ Singleton {
         try {
             ev = JSON.parse(line);
         } catch (e) {
+            return;
+        }
+
+        if (ev.type === "extension_ui_request") {
+            if (ev.method === "select" || ev.method === "confirm" || ev.method === "input" || ev.method === "editor") {
+                ask = {
+                    id: ev.id,
+                    method: ev.method,
+                    title: ev.title ?? "approval needed",
+                    message: ev.message ?? "",
+                    options: ev.options ?? []
+                };
+                addRow("ask", (ev.title ?? "approval needed") + "\n" + (ev.message ?? ""));
+                return;
+            }
+            if (ev.method === "notify" && ev.notifyType !== "info")
+                addRow("info", ev.message);
             return;
         }
 

@@ -26,6 +26,10 @@ bar (bottom left)         popout
 - **Chat** runs `pi --mode rpc` inside the shell, so it has pi's tools, sessions and file access —
   an OS helper, not just a prompt box. The process lives in the shell singleton, so closing the
   panel keeps the session running in the background.
+- **Composer** has a send / stop button: send posts the message, stop aborts the running turn.
+- **Replies are selectable** — drag to select, `Ctrl+C` to copy.
+- **Approval bar** — extension dialogs (the sudo gate, confirms, selects) render above the composer with
+  Allow / Deny buttons instead of silently blocking the run. Text prompts are answered from the composer.
 - **Toast when an answer lands** while the panel is closed.
 - **Header** shows live `tok/s` while the model answers, `ready` when idle, `server stopped` when the
   server is down. Pin toggle (`keep`) keeps the panel open while you work elsewhere; `×`, `Escape` or
@@ -129,6 +133,8 @@ Two rules to keep when editing it:
 - Jinja comments must end with `-#}`, not `-*-}`; the latter leaves `render_content` undefined and
   every request 500s.
 - Keep both blocks above the tools section, otherwise tool calls get the chatty style too.
+- The role block also tells the model to self-check a privileged or destructive command (path exists,
+  flags valid, root really needed, data loss?) and to state what it does before asking for approval.
 - The environment facts are static on purpose. Anything that drifts (kernel, versions) is left out so
   the model has to run a command instead of quoting a stale string.
 

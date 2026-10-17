@@ -21,6 +21,15 @@ Item {
             ChatState.pinned = false;
     }
 
+    function submit(): void {
+        const text = input.text;
+        input.text = "";
+        if (ChatState.ask && (ChatState.ask.method === "input" || ChatState.ask.method === "editor"))
+            ChatState.respond(text);
+        else if (!ChatState.command(text))
+            ChatState.send(text);
+    }
+
     function close(): void {
         ChatState.pinned = false;
         root.popouts.hasCurrent = false;
@@ -162,7 +171,7 @@ Item {
                             required property string text
 
                             width: column.width
-                            height: kind === "user" ? bubble.height : kind === "tool" ? chip.implicitHeight : body.implicitHeight
+                            height: kind === "user" ? bubble.height : kind === "tool" ? chip.implicitHeight : body.contentHeight
                             opacity: 0
 
                             Component.onCompleted: appear.start()
@@ -199,50 +208,89 @@ Item {
                                 }
                             }
 
-                            StyledText {
+                            TextEdit {
                                 id: body
 
                                 visible: row.kind !== "user"
                                 width: parent.width
+                                height: contentHeight
                                 text: row.text
                                 color: row.kind === "error" ? Colours.palette.m3error : Colours.palette.m3onSurface
                                 font: Tokens.font.body.medium
-                                textFormat: row.kind === "assistant" ? Text.MarkdownText : Text.PlainText
-                                wrapMode: Text.Wrap
+                                textFormat: row.kind === "assistant" ? TextEdit.MarkdownText : TextEdit.PlainText
+                                wrapMode: TextEdit.Wrap
+                                readOnly: true
+                                selectByMouse: true
+                                persistentSelection: true
+                                activeFocusOnPress: true
                             }
 
-                            StyledRect {
+                            StyledText {
                                 id: chip
 
                                 visible: row.kind === "tool"
-                                implicitWidth: Math.min(row.width, chipRow.implicitWidth + Tokens.padding.medium)
-                                implicitHeight: chipRow.implicitHeight + Tokens.padding.extraSmall
-                                radius: Tokens.rounding.small
-                                color: Colours.tPalette.m3surfaceContainerHigh
-
-                                RowLayout {
-                                    id: chipRow
-
-                                    anchors.centerIn: parent
-                                    spacing: Tokens.spacing.extraSmall
-
-                                    MaterialIcon {
-                                        text: "build"
-                                        color: Colours.palette.m3onSurfaceVariant
-                                        fontStyle: Tokens.font.icon.extraSmall
-                                    }
-
-                                    StyledText {
-                                        Layout.maximumWidth: row.width - Tokens.padding.large * 2
-                                        text: row.text
-                                        elide: Text.ElideRight
-                                        color: Colours.palette.m3onSurfaceVariant
-                                        font: Tokens.font.mono.small
-                                    }
-                                }
+                                width: parent.width
+                                text: row.text
+                                elide: Text.ElideRight
+                                color: Colours.palette.m3onSurfaceVariant
+                                font: Tokens.font.mono.small
                             }
                         }
                     }
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.spacing.small
+                visible: ChatState.ask !== null
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: ChatState.ask ? ChatState.ask.title : ""
+                    color: Colours.palette.m3error
+                    font: Tokens.font.body.small
+                    elide: Text.ElideRight
+                }
+
+                Repeater {
+                    model: ChatState.ask ? (ChatState.ask.method === "select" ? ChatState.ask.options : ChatState.ask.method === "confirm" ? ["Allow", "Deny"] : []) : []
+
+                    delegate: StyledRect {
+                        required property string modelData
+
+                        implicitWidth: answerText.implicitWidth + Tokens.padding.large
+                        implicitHeight: answerText.implicitHeight + Tokens.padding.small
+                        radius: Tokens.rounding.full
+                        color: Colours.tPalette.m3secondaryContainer
+
+                        StateLayer {
+                            onClicked: ChatState.respond(modelData)
+                        }
+
+                        StyledText {
+                            id: answerText
+
+                            anchors.centerIn: parent
+                            text: modelData
+                            color: Colours.palette.m3onSecondaryContainer
+                            font: Tokens.font.label.small
+                        }
+                    }
+                }
+
+                StyledText {
+                    visible: ChatState.ask !== null && ChatState.ask.method !== "select" && ChatState.ask.method !== "confirm"
+                    text: "type answer + enter"
+                    color: Colours.palette.m3onSurfaceVariant
+                    font: Tokens.font.label.small
+                }
+
+                IconButton {
+                    type: IconButton.Text
+                    isRound: true
+                    icon: "close"
+                    onClicked: ChatState.respond(null, true)
                 }
             }
 
@@ -286,6 +334,10 @@ Item {
                 }
             }
 
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: Tokens.spacing.small
+
             StyledRect {
                 Layout.fillWidth: true
                 implicitHeight: input.implicitHeight + Tokens.padding.medium * 2
@@ -312,11 +364,7 @@ Item {
                     selectedTextColor: Colours.palette.m3onPrimary
                     clip: true
 
-                    Keys.onReturnPressed: {
-                        if (!ChatState.command(input.text))
-                            ChatState.send(input.text);
-                        input.text = "";
-                    }
+                    Keys.onReturnPressed: root.submit()
 
                     Keys.onEscapePressed: root.close()
                 }
@@ -329,6 +377,16 @@ Item {
                     color: Colours.palette.m3onSurfaceVariant
                     font: Tokens.font.body.medium
                     visible: input.text.length === 0
+                }
+            }
+
+                IconButton {
+                    type: IconButton.Filled
+                    isRound: true
+                    icon: ChatState.busy ? "stop" : "send"
+                    activeColour: ChatState.busy ? Colours.palette.m3error : Colours.palette.m3primary
+                    inactiveColour: ChatState.busy ? Colours.palette.m3error : Colours.palette.m3primary
+                    onClicked: ChatState.busy ? ChatState.abort() : root.submit()
                 }
             }
         }
