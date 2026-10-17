@@ -84,6 +84,27 @@ patch("modules/drawers/ContentWindow.qml", [
      "WlrLayershell.keyboardFocus: screenState.launcher || screenState.session || (panels.popouts.hasCurrent && panels.popouts.currentName === \"chat\") ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None"),
 ])
 
+# 4. keep the chat open when the pointer leaves the bar, otherwise you cannot reach
+#    the panel's own buttons. It closes on the robot click, the X button or Escape.
+patch("modules/drawers/Interactions.qml", [
+    ("""            if (!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1) {
+                popouts.hasCurrent = false;
+                bar.closeTray();
+            }""",
+     """            if (popouts.currentName !== "chat" && (!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1)) {
+                popouts.hasCurrent = false;
+                bar.closeTray();
+            }"""),
+    ("""        } else if ((!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1) && !inLeftPanel(panels.popoutsWrapper, x, y)) {
+            popouts.hasCurrent = false;
+            bar.closeTray();
+        }""",
+     """        } else if (popouts.currentName !== "chat" && (!popouts.currentName.startsWith("traymenu") || ((popouts.current as StackView)?.depth ?? 0) <= 1) && !inLeftPanel(panels.popoutsWrapper, x, y)) {
+            popouts.hasCurrent = false;
+            bar.closeTray();
+        }"""),
+])
+
 # 4. our own QML files
 for f in sorted(pathlib.Path(OVL / "modules").rglob("*.qml")):
     rel = f.relative_to(OVL)

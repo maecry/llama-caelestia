@@ -26,7 +26,8 @@ bar (bottom left)         popout
   an OS helper, not just a prompt box. The process lives in the shell singleton, so closing the
   panel keeps the session running in the background.
 - **Toast when an answer lands** while the panel is closed.
-- **Popout closes** when the pointer leaves it; the chat keeps going.
+- **Popout stays open** while you move to its buttons (it is not a hover menu). Close it with the
+  robot icon, the `×`, or `Escape`; the chat keeps going and a toast tells you when the answer is in.
 - Styling uses real caelestia Material 3 tokens (`Colours`, `Tokens`, `Anim`, `MaterialIcon`).
 
 ## How it hooks into the shell
