@@ -1,0 +1,4 @@
+target/
+config.env
+llama-server.log
+*.pid

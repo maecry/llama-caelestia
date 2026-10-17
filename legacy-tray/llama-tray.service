@@ -1,0 +1,13 @@
+[Unit]
+Description=llama.cpp server tray icon (caelestia)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+ExecStart=%h/Projects/llms/llama.caelestia-tray/target/release/llama-tray
+KillMode=process
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target
